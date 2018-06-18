@@ -134,7 +134,7 @@ def setup(owner, repo):
             run(['git', 'push', 'origin', 'master'], cwd=repo_dir.name)
 
     except UnknownObjectException:
-        return jsonify({ "success": False, "error": f"Unable to access repo.  Be sure `{GIT_USERNAME}` has write access to the repo." })
+        return jsonify({ "success": False, "error": f"Unable to access repo.  Be sure `{GIT_USERNAME}` has admin access to the repo.  You can limit access to 'write' after setup." })
     except Exception as e:
         return jsonify({ 'success': False, 'error': str(e) })
     finally:
