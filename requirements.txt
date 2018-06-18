@@ -2,3 +2,4 @@ flask
 redis
 pygithub
 requests
+gunicorn

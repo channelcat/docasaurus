@@ -8,5 +8,6 @@ services:
      - .env
     volumes:
      - .:/code
+    command: python main.py
   redis:
     image: redis

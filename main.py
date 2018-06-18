@@ -12,7 +12,7 @@ import requests
 
 APP_URL = environ.get('APP_URL')
 GIT_HOST = environ.get('GIT_HOST', 'github.com')
-GIT_API_URL = 'https://api.github.com' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/api'
+GIT_API_URL = 'https://api.github.com' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/api/v3'
 GIT_USERNAME = environ.get('GIT_USERNAME')
 GIT_PASSWORD = environ.get('GIT_PASSWORD')
 GIT_COMMITTER_NAME = environ.get('GIT_COMMITTER_NAME')
