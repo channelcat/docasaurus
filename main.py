@@ -50,7 +50,10 @@ def index():
 def githook():
     post_data = request.get_json()
     owner, repo = post_data.get('repository', {}).get('full_name').split('/')
-    return setup(owner, repo)
+    if post_data.get('ref') == 'refs/heads/master':
+        return process(owner, repo)
+    else:
+        return jsonify({'build': False})
 
 @app.route('/setup/<owner>/<repo>')
 def setup(owner, repo):
