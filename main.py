@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, redirect, request, send_from_directory
+from flask import Flask, jsonify, redirect, request, send_from_directory, Response
 from glob import glob
 from tempfile import TemporaryDirectory
 from subprocess import check_output, STDOUT, CalledProcessError
@@ -8,6 +8,7 @@ from shutil import move, rmtree
 from github import Github, UnknownObjectException
 from storage import set_status, get_status
 import re
+import requests
 
 APP_URL = environ.get('APP_URL')
 GIT_HOST = environ.get('GIT_HOST', 'github.com')
@@ -184,6 +185,7 @@ def process(owner, repo):
                 raise Exception(f'Unable to update gh-pages branch.  Be sure `{GIT_USERNAME}` has write access to the repo.  Error: {e}')
         
         ls = run(['ls', '-a', repo_dir.name]).decode().split('\n')
+        set_status(owner, repo, status='success', coverage=100)
         return jsonify({ 'success': True, 'ls': ls, 'branch_created': is_new_branch, 'updated': updated })
     except Exception as e:
         set_status(owner, repo, status='error', message=str(e))
@@ -191,19 +193,20 @@ def process(owner, repo):
     finally:
         repo_dir.cleanup()
         docs_dir.cleanup()
-    set_status(owner, repo, status='success', coverage=100)
 
 @app.route('/badge/<owner>/<repo>')
 def badge(owner, repo):
     status = get_status(owner, repo)
+    url = "https://img.shields.io/badge/docs-unknown-lightgrey.svg"
     if status.get('status') == 'success':
-        return redirect(f"https://img.shields.io/badge/docs-{status.get('coverage', 100)}%25-brightgreen.svg", code=302)
+        url = f"https://img.shields.io/badge/docs-{status.get('coverage', 100)}%25-brightgreen.svg"
     elif status.get('status') == 'building':
-        return redirect("https://img.shields.io/badge/docs-building-blue.svg", code=302)
+        url = "https://img.shields.io/badge/docs-building-blue.svg"
     elif status.get('status') == 'error':
-        return redirect("https://img.shields.io/badge/docs-error-red.svg", code=302)
-    else:
-        return redirect("https://img.shields.io/badge/docs-unknown-lightgrey.svg", code=302)
+        url = "https://img.shields.io/badge/docs-error-red.svg"
+    
+    response = requests.get(url)
+    return Response(response.text, mimetype=response.headers.get('Content-Type'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)
