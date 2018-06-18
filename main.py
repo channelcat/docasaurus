@@ -48,7 +48,25 @@ def remove_files(source, ignore=()):
 def index():
     return send_from_directory('/code', 'index.html')
 
-@app.route('/githook', methods=['POST'])
+@app.route('/status/<owner>/<repo>')
+def status(owner, repo):
+    return send_from_directory('/code', 'status.html')
+
+@app.route('/badge/<owner>/<repo>')
+def badge(owner, repo):
+    status = get_status(owner, repo)
+    url = "https://img.shields.io/badge/docs-unknown-lightgrey.svg"
+    if status.get('status') == 'success':
+        url = f"https://img.shields.io/badge/docs-{status.get('coverage', 100)}%25-brightgreen.svg"
+    elif status.get('status') == 'building':
+        url = "https://img.shields.io/badge/docs-building-blue.svg"
+    elif status.get('status') == 'error':
+        url = "https://img.shields.io/badge/docs-error-red.svg"
+    
+    response = requests.get(url)
+    return Response(response.text, mimetype=response.headers.get('Content-Type'))
+
+@app.route('/api/v1/githook', methods=['POST'])
 def githook():
     post_data = request.get_json()
     owner, repo = post_data.get('repository', {}).get('full_name').split('/')
@@ -57,7 +75,7 @@ def githook():
     else:
         return jsonify({'build': False})
 
-@app.route('/setup/<owner>/<repo>')
+@app.route('/api/v1/setup/<owner>/<repo>')
 def setup(owner, repo):
     needs_create_hook = True
     needs_create_readme = True
@@ -90,7 +108,7 @@ def setup(owner, repo):
             needs_add_badge = False
     
         if needs_create_hook:
-            repo.create_hook(name='web', config={'url': f'{APP_URL}/githook', 'content_type': 'json'}, events=['push'])
+            repo.create_hook(name='web', config={'url': f'{APP_URL}/api/v1/githook', 'content_type': 'json'}, events=['push'])
         if needs_create_readme:
             files_list = {f.lower(): f for f in listdir(repo_dir.name)}
             if 'readme.md' in files_list:
@@ -129,7 +147,7 @@ def setup(owner, repo):
         "badge": "created" if needs_add_badge else ("ready" if request_add_badge else "skip"),
     })
 
-@app.route('/process/<owner>/<repo>')
+@app.route('/api/v1/process/<owner>/<repo>')
 def process(owner, repo):
     set_status(owner, repo, status='building')
     repo_dir = TemporaryDirectory()
@@ -194,19 +212,11 @@ def process(owner, repo):
         repo_dir.cleanup()
         docs_dir.cleanup()
 
-@app.route('/badge/<owner>/<repo>')
-def badge(owner, repo):
-    status = get_status(owner, repo)
-    url = "https://img.shields.io/badge/docs-unknown-lightgrey.svg"
-    if status.get('status') == 'success':
-        url = f"https://img.shields.io/badge/docs-{status.get('coverage', 100)}%25-brightgreen.svg"
-    elif status.get('status') == 'building':
-        url = "https://img.shields.io/badge/docs-building-blue.svg"
-    elif status.get('status') == 'error':
-        url = "https://img.shields.io/badge/docs-error-red.svg"
-    
-    response = requests.get(url)
-    return Response(response.text, mimetype=response.headers.get('Content-Type'))
+@app.route('/api/v1/status/<owner>/<repo>')
+def api_status(owner, repo):
+    repo_url = f'https://{GIT_HOST}/{owner}/{repo}'
+    pages_url = f'https://{owner}.github.io/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/pages/{owner}/{repo}'
+    return jsonify({'repo_url': repo_url, 'pages_url': pages_url, **get_status(owner, repo)})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)

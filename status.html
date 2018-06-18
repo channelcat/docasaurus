@@ -1,0 +1,121 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Docasaurus</title>
+        <meta charset="utf-8">
+        <meta name="description" content="Docasaurus - Create docs for github projects">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css" />
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+    </head>
+    <body>
+        <section class="hero is-fullheight" id="app">
+            <div class="hero-body is-loading">
+                <div class="container has-text-centered">
+                    <div class="column is-4 is-offset-4">
+                        <h3 class="title has-text-grey">{{repo}}</h3>
+                        <p class="subtitle has-text-grey">{{owner}}</p>
+                        <div class="box">
+                            <div class="columns is-gapless">
+                                <div v-bind:class="[{'is-four-fifths': !loading}, 'column']">
+                                    <div v-if="status=='loading'" class="notification">
+                                        Loading...
+                                    </div>
+                                    <div v-if="status=='error'" class="notification is-danger">
+                                        {{message}}
+                                    </div>
+                                    <div v-if="status=='unknown'" class="notification is-warning">
+                                        Status Unknown.  Is this repo <a href="/">initialized</a>?
+                                    </div>
+                                    <div v-if="status=='building'" class="notification is-info">
+                                        Building...
+                                    </div>
+                                    <div v-if="status=='success'" class="notification is-success">
+                                        Build Passing - {{coverage}}% Coverage
+                                    </div>
+                                </div>
+                                <div v-if="!loading && status!='building'" class="column has-text-right">
+                                    <a class="button" v-on:click="process" style="height:64px; width: 64px;">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <a v-bind:href="repoUrl">
+                                <h5><i class="fab fa-github"></i> Github</h5>
+                            </a>
+                            <a v-bind:href="pagesUrl">
+                                <h3 class="title has-text-grey">Read the Docs</h3>
+                            </a>
+                        </div>
+                        <p class="has-text-grey">
+                            <a href="/">New Repo</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </body>
+    <script>
+new Vue({
+    el: '#app',
+    data: {
+        owner: '',
+        repo: '',
+        repoUrl: '',
+        pagesUrl: '',
+        status: 'loading',
+        message: '',
+        coverage: 0,
+        loading: true,
+    },
+    created: function () {
+        var urlParts = window.location.href.split('/');
+        this.owner = urlParts[4];
+        this.repo = urlParts[5];
+        this.loadStatus();
+    },
+    methods: {
+        loadStatus: function() {
+            this.loading = true;
+            fetch('/api/v1/status/' + this.owner + '/' + this.repo)
+            .then((response) => {
+                return response.json();
+            })
+            .then((response) => {
+                this.loading = false;
+                this.repoUrl = response.repo_url;
+                this.pagesUrl = response.pages_url;
+                this.status = response.status;
+                this.message = response.message || '';
+                this.coverage = response.coverage;
+            })
+            .catch((e) => {
+                this.loading = false;
+                this.status = 'error';
+                this.message = str(e);
+            });
+        },
+        process: function() {
+            this.loading = true;
+            this.status = 'building';
+            fetch('/api/v1/process/' + this.owner + '/' + this.repo)
+            .then((response) => {
+                return response.json();
+            })
+            .then((response) => {
+                this.loadStatus();
+            })
+            .catch((e) => {
+                this.loading = false;
+                this.status = 'error';
+                this.message = str(e);
+            });
+        }
+    }
+});
+    </script>
+</html>

@@ -98,7 +98,7 @@ new Vue({
                 this.requesting = true;
                 this.error = '';
 
-                fetch('/setup/' + this.owner + '/' + this.repo + '?addBadge=' + this.addBadge)
+                fetch('/api/v1/setup/' + this.owner + '/' + this.repo + '?addBadge=' + this.addBadge)
                 .then((response) => {
                     return response.json();
                 })
