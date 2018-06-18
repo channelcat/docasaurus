@@ -21,7 +21,7 @@
                         <p class="subtitle has-text-grey">{{owner}}</p>
                         <div class="box">
                             <div class="columns is-gapless">
-                                <div v-bind:class="[{'is-four-fifths': !loading}, 'column']">
+                                <div v-bind:class="[{'is-four-fifths': !loading && status!='building'}, 'column']">
                                     <div v-if="status=='loading'" class="notification">
                                         Loading...
                                     </div>
