@@ -2,7 +2,7 @@
   "toc": {
     "sections": [
       {
-        "title": "Docasaurus",
+        "title": "channelcat/docasaurus",
         "source": "README.md",
         "expand": true,
         "url": "index.html",
@@ -13,8 +13,8 @@
   "index": {
     "index.html": {
       "source": "README.md",
-      "title": "Docasaurus",
-      "pageTitle": "Docasaurus",
+      "title": "channelcat/docasaurus",
+      "pageTitle": "channelcat/docasaurus",
       "slug": "index"
     }
   },
