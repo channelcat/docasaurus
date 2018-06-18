@@ -2,7 +2,7 @@
   "toc": {
     "sections": [
       {
-        "title": "undefined",
+        "title": "Docasaurus",
         "source": "README.md",
         "expand": true,
         "url": "index.html",
@@ -13,8 +13,8 @@
   "index": {
     "index.html": {
       "source": "README.md",
-      "title": "undefined",
-      "pageTitle": "undefined",
+      "title": "Docasaurus",
+      "pageTitle": "Docasaurus",
       "slug": "index"
     }
   },
