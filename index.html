@@ -39,6 +39,7 @@
                                             <img v-if="!success && !addBadge" src="https://img.shields.io/badge/Badge-skip-orange.svg" />
                                             <img v-if="success && results.badge=='created'" src="https://img.shields.io/badge/Badge-created-brightgreen.svg" />
                                             <img v-if="success && results.badge=='ready'" src="https://img.shields.io/badge/Badge-ready-green.svg" />
+                                            <img v-if="success && results.badge=='skip'" src="https://img.shields.io/badge/Badge-skip-orange.svg" />
                                             <br />
                                             <br />
                                         </div>
@@ -97,7 +98,7 @@ new Vue({
                 this.requesting = true;
                 this.error = '';
 
-                fetch('/setup/' + this.owner + '/' + this.repo)
+                fetch('/setup/' + this.owner + '/' + this.repo + '?addBadge=' + this.addBadge)
                 .then((response) => {
                     return response.json();
                 })
@@ -110,6 +111,10 @@ new Vue({
                         readme: response.readme,
                         badge: response.badge,
                     };
+                })
+                .catch((e) => {
+                    this.requesting = false;
+                    this.error = str(e);
                 });
             }
         }

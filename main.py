@@ -1,11 +1,12 @@
-from flask import Flask, jsonify, request,  send_from_directory
+from flask import Flask, jsonify, redirect, request, send_from_directory
 from glob import glob
 from tempfile import TemporaryDirectory
 from subprocess import check_output, STDOUT, CalledProcessError
-from os import environ, listdir, path, unlink
+from os import environ, listdir, path, unlink, rename
 from io import StringIO
 from shutil import move, rmtree
 from github import Github, UnknownObjectException
+from storage import set_status, get_status
 import re
 
 APP_URL = environ.get('APP_URL')
@@ -60,31 +61,76 @@ def setup(owner, repo):
     needs_create_hook = True
     needs_create_readme = True
     needs_add_badge = True
+    request_add_badge = request.args.get('addBadge') == 'true'
 
+    repo_name = repo
+    repo_dir = TemporaryDirectory()
+    repo_url = f'https://{GIT_HOST}/{owner}/{repo}.git'
+    badge_image_url = f'{APP_URL}/badge/{owner}/{repo_name}'
+    status_url = f'{APP_URL}/status/{owner}/{repo_name}'
+    readme_path = f'{repo_dir.name}/README.md'
     try:
+        # Check if hook is needed
         repo = github.get_repo(f'{owner}/{repo}')
         for hook in repo.get_hooks():
             hook_url = hook.config.get('url', '')
             if APP_URL in hook_url:
                 needs_create_hook = False
                 break
+        
+        # Check if README.md is needed
+        run(['git', 'clone', repo_url, repo_dir.name])
+        needs_create_readme = not path.exists(readme_path)
+
+        # Check if badge is needed
+        if not needs_create_readme:
+            needs_add_badge = badge_image_url not in open(readme_path).read()
+        if not request_add_badge:
+            needs_add_badge = False
+    
+        if needs_create_hook:
+            repo.create_hook(name='web', config={'url': f'{APP_URL}/githook', 'content_type': 'json'}, events=['push'])
+        if needs_create_readme:
+            files_list = {f.lower(): f for f in listdir(repo_dir.name)}
+            if 'readme.md' in files_list:
+                rename(f"{repo_dir.name}/{files_list['readme.md']}", readme_path)
+            else:
+                open(readme_path, 'w+').write(f'# {repo.full_name}\n\n{repo.description}')
+        if needs_add_badge:
+            readme = open(readme_path).read()
+            badge = f'\n[![Documentation]({badge_image_url})]({status_url})\n'
+            badge_position = readme.find('[')
+            if badge_position == -1:
+                badge_position = readme.find('\n') + 1
+            if badge_position > 0:
+                readme = readme[:badge_position] + badge + readme[badge_position:]
+            else:
+                readme = badge + readme
+            open(readme_path, 'w').write(readme)
+
+        if needs_create_readme or needs_add_badge:
+            run(['git', 'add', 'README.md'], cwd=repo_dir.name)
+            run(['git', '-c', f'user.name={GIT_COMMITTER_NAME}', '-c', f'user.email={GIT_COMMITTER_EMAIL}', 
+                 'commit', '-am', 'Added README.md'], cwd=repo_dir.name)
+            run(['git', 'push', 'origin', 'master'], cwd=repo_dir.name)
+
     except UnknownObjectException:
         return jsonify({ "success": False, "error": f"Unable to access repo.  Be sure `{GIT_USERNAME}` has write access to the repo." })
     except Exception as e:
-        return jsonify({ "success": False, "error": f"An error occurred: {e}" })
-    
-    if needs_create_hook:
-        repo.create_hook(name='web', config={'url': f'{APP_URL}/githook', 'content_type': 'json'}, events=['push'])
+        return jsonify({ 'success': False, 'error': str(e) })
+    finally:
+        repo_dir.cleanup()
 
     return jsonify({ 
         "success": True, 
         "hook": "created" if needs_create_hook else "ready",
         "readme": "created" if needs_create_readme else "ready",
-        "badge": "created" if needs_add_badge else "ready",
+        "badge": "created" if needs_add_badge else ("ready" if request_add_badge else "skip"),
     })
 
 @app.route('/process/<owner>/<repo>')
 def process(owner, repo):
+    set_status(owner, repo, status='building')
     repo_dir = TemporaryDirectory()
     docs_dir = TemporaryDirectory()
     try:
@@ -140,10 +186,24 @@ def process(owner, repo):
         ls = run(['ls', '-a', repo_dir.name]).decode().split('\n')
         return jsonify({ 'success': True, 'ls': ls, 'branch_created': is_new_branch, 'updated': updated })
     except Exception as e:
+        set_status(owner, repo, status='error', message=str(e))
         return jsonify({ 'success': False, 'error': str(e) })
     finally:
         repo_dir.cleanup()
         docs_dir.cleanup()
+    set_status(owner, repo, status='success', coverage=100)
+
+@app.route('/badge/<owner>/<repo>')
+def badge(owner, repo):
+    status = get_status(owner, repo)
+    if status.get('status') == 'success':
+        return redirect(f"https://img.shields.io/badge/docs-{status.get('coverage', 100)}%25-brightgreen.svg", code=302)
+    elif status.get('status') == 'building':
+        return redirect("https://img.shields.io/badge/docs-building-blue.svg", code=302)
+    elif status.get('status') == 'error':
+        return redirect("https://img.shields.io/badge/docs-error-red.svg", code=302)
+    else:
+        return redirect("https://img.shields.io/badge/docs-unknown-lightgrey.svg", code=302)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)

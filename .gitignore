@@ -1,1 +1,10 @@
+*~
+*.egg-info
+*.egg
+*.eggs
+*.pyc
+.coverage
+.coverage.*
+coverage
+.tox
 .env
