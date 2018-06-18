@@ -10,41 +10,110 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
         <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css" />
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
     </head>
     <body>
-        <section class="hero is-fullheight">
+        <section class="hero is-fullheight" id="app">
             <div class="hero-body">
                 <div class="container has-text-centered">
                     <div class="column is-4 is-offset-4">
                         <h3 class="title has-text-grey">Docasaurus</h3>
                         <p class="subtitle has-text-grey">Create docs for your github</p>
                         <div class="box">
-                            <form>
-                                <div class="field">
+                            <div v-if="error" class="notification is-danger">
+                                {{error}}
+                            </div>
+                            <div v-if="requesting || success">
+                                <form>
+                                    <div class="field">
+                                        <div class="control has-text-centered">
+                                            <img v-if="!success" src="https://img.shields.io/badge/Git+Hook-generating-lightgrey.svg" />
+                                            <img v-if="success && results.hook=='created'" src="https://img.shields.io/badge/Git+Hook-created-brightgreen.svg" />
+                                            <img v-if="success && results.hook=='ready'" src="https://img.shields.io/badge/Git+Hook-ready-green.svg" />
+                                            <br />
+                                            <img v-if="!success" src="https://img.shields.io/badge/Git+Readme-generating-lightgrey.svg" />
+                                            <img v-if="success && results.readme=='created'" src="https://img.shields.io/badge/Git+Readme-created-brightgreen.svg" />
+                                            <img v-if="success && results.readme=='ready'" src="https://img.shields.io/badge/Git+Readme-ready-green.svg" />
+                                            <br />
+                                            <img v-if="!success && addBadge" src="https://img.shields.io/badge/Badge-generating-lightgrey.svg" />
+                                            <img v-if="!success && !addBadge" src="https://img.shields.io/badge/Badge-skip-orange.svg" />
+                                            <img v-if="success && results.badge=='created'" src="https://img.shields.io/badge/Badge-created-brightgreen.svg" />
+                                            <img v-if="success && results.badge=='ready'" src="https://img.shields.io/badge/Badge-ready-green.svg" />
+                                            <br />
+                                            <br />
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <form v-if="!success">
+                                <div v-if="!requesting" class="field">
                                     <div class="control">
-                                        <input class="input is-large" type="owner" placeholder="Owner" autofocus="">
+                                        <input v-model="owner" class="input is-large" type="owner" placeholder="Owner" autofocus="">
                                     </div>
                                 </div>
-                                <div class="field">
+                                <div v-if="!requesting" class="field">
                                     <div class="control">
-                                        <input class="input is-large" type="repo" placeholder="Repo" autofocus="">
+                                        <input v-model="repo" class="input is-large" type="repo" placeholder="Repo" autofocus="">
                                     </div>
                                 </div>
-                                <div class="field">
+                                <div v-if="!requesting" class="field">
                                     <label class="checkbox">
-                                        <input type="checkbox">
+                                        <input v-model="addBadge" type="checkbox">
                                         Add Badge
                                     </label>
                                 </div>
-                                <button class="button is-block is-info is-large is-fullwidth">Setup Docs</button>
+                                <button v-if="!success" v-bind:class="[{'is-loading': requesting}, 'button is-block is-info is-large is-fullwidth']" v-on:click="setup">Setup Docs</button>
                             </form>
+                            <p v-else>
+                                Docs set up!  Github Pages will now be built when updates are pushed to master.  Check out the documentation below for more info.
+                            </p>
                         </div>
                         <p class="has-text-grey">
-                            <a href="http://channelcat.github.io/docasaurus">Docs</a>
+                            <a href="http://channelcat.github.io/docasaurus">Read the Docs</a>
                         </p>
                     </div>
                 </div>
             </div>
         </section>
     </body>
+    <script>
+new Vue({
+    el: '#app',
+    data: {
+        requesting: false,
+        success: false,
+        owner: '',
+        repo: '',
+        addBadge: true,
+        error: '',
+        results: {},
+    },
+    methods: {
+        setup: function(event) {
+            event.preventDefault();
+            if (this.requesting)
+                return;
+            if (this.repo && this.owner) {
+                this.requesting = true;
+                this.error = '';
+
+                fetch('/setup/' + this.owner + '/' + this.repo)
+                .then((response) => {
+                    return response.json();
+                })
+                .then((response) => {
+                    this.requesting = false;
+                    this.success = response.success;
+                    this.error = response.error || '';
+                    this.results = {
+                        hook: response.hook,
+                        readme: response.readme,
+                        badge: response.badge,
+                    };
+                });
+            }
+        }
+    }
+})
+    </script>
 </html>
