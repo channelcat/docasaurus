@@ -2,9 +2,9 @@ from flask import Flask, jsonify, redirect, request, send_from_directory, Respon
 from glob import glob
 from tempfile import TemporaryDirectory
 from subprocess import check_output, STDOUT, CalledProcessError
-from os import environ, listdir, path, unlink, rename
+from os import environ, listdir, path, unlink, rename, walk
 from io import StringIO
-from shutil import move, rmtree
+from shutil import move, rmtree, copytree, copy
 from github import Github, UnknownObjectException
 from storage import set_status, get_status
 import re
@@ -44,6 +44,21 @@ def remove_files(source, ignore=()):
             unlink(file_path)
     return True
 
+def replace_in_files(directory, replacements):
+    for root, dirs, files in walk(directory):
+        for name in files:
+            file_path = path.join(root, name)
+            with open(file_path) as file:
+                contents = file.read()
+            with open(file_path, 'w') as file:
+                contents = replace_in_str(contents, replacements)
+                file.write(contents)
+
+def replace_in_str(string, replacements):
+    for k, v in replacements.items():
+        string = string.replace('{' + k + '}', v)
+    return string
+
 @app.route('/')
 def index():
     return send_from_directory('/code', 'index.html')
@@ -79,15 +94,20 @@ def githook():
 def setup(owner, repo):
     needs_create_hook = True
     needs_create_readme = True
+    needs_create_docs = True
     needs_add_badge = True
+    request_create_docs = request.args.get('createDocs') == 'true'
     request_add_badge = request.args.get('addBadge') == 'true'
 
     repo_name = repo
     repo_dir = TemporaryDirectory()
     repo_url = f'https://{GIT_HOST}/{owner}/{repo}.git'
+    repo_uri = f'{owner}/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/{owner}/{repo}'
+    pages_url = f'https://{owner}.github.io/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/pages/{owner}/{repo}'
     badge_image_url = f'{APP_URL}/badge/{owner}/{repo_name}'
     status_url = f'{APP_URL}/status/{owner}/{repo_name}'
     readme_path = f'{repo_dir.name}/README.md'
+    docs_path = f'{repo_dir.name}/docs'
     try:
         # Check if hook is needed
         repo = github.get_repo(f'{owner}/{repo}')
@@ -97,9 +117,10 @@ def setup(owner, repo):
                 needs_create_hook = False
                 break
         
-        # Check if README.md is needed
+        # Check if README.md and docs are needed
         run(['git', 'clone', repo_url, repo_dir.name])
         needs_create_readme = not path.exists(readme_path)
+        needs_create_docs = not path.exists(docs_path) and request_create_docs
 
         # Check if badge is needed
         if not needs_create_readme:
@@ -107,6 +128,12 @@ def setup(owner, repo):
         if not request_add_badge:
             needs_add_badge = False
     
+        replacements = {
+            'github_uri': repo_uri,
+            'ghpages_url': pages_url,
+            'project_name': repo.name,
+        }
+
         if needs_create_hook:
             repo.create_hook(name='web', config={'url': f'{APP_URL}/api/v1/githook', 'content_type': 'json'}, events=['push'])
         if needs_create_readme:
@@ -114,7 +141,13 @@ def setup(owner, repo):
             if 'readme.md' in files_list:
                 rename(f"{repo_dir.name}/{files_list['readme.md']}", readme_path)
             else:
-                open(readme_path, 'w+').write(f'# {repo.full_name}\n\n{repo.description}')
+                readme_contents = open('/code/template/README.md').read()
+                readme_contents = replace_in_str(readme_contents, replacements)
+                open(readme_path, 'w+').write(readme_contents)
+        if needs_create_docs:
+            copytree('/code/template/docs', docs_path)
+            run(['git', 'add', 'docs'], cwd=repo_dir.name)
+            replace_in_files(docs_path, replacements)
         if needs_add_badge:
             readme = open(readme_path).read()
             badge = f'\n[![Documentation]({badge_image_url})]({status_url})\n'
@@ -127,7 +160,8 @@ def setup(owner, repo):
                 readme = badge + readme
             open(readme_path, 'w').write(readme)
 
-        if needs_create_readme or needs_add_badge:
+        # Push changes to Git
+        if needs_create_readme or needs_add_badge or needs_create_docs:
             run(['git', 'add', 'README.md'], cwd=repo_dir.name)
             run(['git', '-c', f'user.name={GIT_COMMITTER_NAME}', '-c', f'user.email={GIT_COMMITTER_EMAIL}', 
                  'commit', '-am', 'Added README.md'], cwd=repo_dir.name)
@@ -135,8 +169,8 @@ def setup(owner, repo):
 
     except UnknownObjectException:
         return jsonify({ "success": False, "error": f"Unable to access repo.  Be sure `{GIT_USERNAME}` has admin access to the repo.  You can limit access to 'write' after setup." })
-    except Exception as e:
-        return jsonify({ 'success': False, 'error': str(e) })
+    # except Exception as e:
+    #     return jsonify({ 'success': False, 'error': str(e) })
     finally:
         repo_dir.cleanup()
 
@@ -144,6 +178,7 @@ def setup(owner, repo):
         "success": True, 
         "hook": "created" if needs_create_hook else "ready",
         "readme": "created" if needs_create_readme else "ready",
+        "docs": "created" if needs_create_docs else ("ready" if request_create_docs else "skip"),
         "badge": "created" if needs_add_badge else ("ready" if request_add_badge else "skip"),
     })
 

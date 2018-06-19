@@ -18,7 +18,7 @@
                 <div class="container has-text-centered">
                     <div class="column is-4 is-offset-4">
                         <h3 class="title has-text-grey">Docasaurus</h3>
-                        <p class="subtitle has-text-grey">Create docs for your github</p>
+                        <p class="subtitle has-text-grey">Create docs for your github repo</p>
                         <div class="box">
                             <div v-if="error" class="notification is-danger">
                                 {{error}}
@@ -34,6 +34,12 @@
                                             <img v-if="!success" src="https://img.shields.io/badge/README.md-generating-lightgrey.svg" />
                                             <img v-if="success && results.readme=='created'" src="https://img.shields.io/badge/README.md-created-brightgreen.svg" />
                                             <img v-if="success && results.readme=='ready'" src="https://img.shields.io/badge/README.md-ready-green.svg" />
+                                            <br />
+                                            <img v-if="!success && createDocs" src="https://img.shields.io/badge/Docs-generating-lightgrey.svg" />
+                                            <img v-if="!success && !createDocs" src="https://img.shields.io/badge/Docs-skip-orange.svg" />
+                                            <img v-if="success && results.docs=='created'" src="https://img.shields.io/badge/Docs-created-brightgreen.svg" />
+                                            <img v-if="success && results.docs=='ready'" src="https://img.shields.io/badge/Docs-ready-green.svg" />
+                                            <img v-if="success && results.docs=='skip'" src="https://img.shields.io/badge/Docs-skip-orange.svg" />
                                             <br />
                                             <img v-if="!success && addBadge" src="https://img.shields.io/badge/Badge-generating-lightgrey.svg" />
                                             <img v-if="!success && !addBadge" src="https://img.shields.io/badge/Badge-skip-orange.svg" />
@@ -58,6 +64,11 @@
                                     </div>
                                 </div>
                                 <div v-if="!requesting" class="field">
+                                    <label class="checkbox">
+                                        <input v-model="createDocs" type="checkbox">
+                                        Create Docs
+                                    </label>
+                                    &nbsp;
                                     <label class="checkbox">
                                         <input v-model="addBadge" type="checkbox">
                                         Add Badge
@@ -86,6 +97,7 @@ new Vue({
         owner: '',
         repo: '',
         addBadge: true,
+        createDocs: true,
         error: '',
         results: {},
     },
@@ -98,7 +110,7 @@ new Vue({
                 this.requesting = true;
                 this.error = '';
 
-                fetch('/api/v1/setup/' + this.owner + '/' + this.repo + '?addBadge=' + this.addBadge)
+                fetch('/api/v1/setup/' + this.owner + '/' + this.repo + '?addBadge=' + this.addBadge + '&createDocs=' + this.createDocs)
                 .then((response) => {
                     return response.json();
                 })
@@ -109,6 +121,7 @@ new Vue({
                     this.results = {
                         hook: response.hook,
                         readme: response.readme,
+                        docs: response.docs,
                         badge: response.badge,
                     };
                 })
