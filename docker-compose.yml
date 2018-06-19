@@ -1,13 +1,18 @@
 version: '3.4'
 services:
   api:
-    build: .
+    image: channelcat/docasaurus
     ports:
-     - 8000:80
-    env_file:
-     - .env
-    volumes:
-     - .:/code
-    command: python main.py
+     - 80
+    environment:
+      - GIT_HOST
+      - GIT_COMMITTER_NAME
+      - GIT_COMMITTER_EMAIL
+      - GIT_USERNAME
+      - GIT_PASSWORD
+      - REDIS_HOST
+      - REDIS_PORT
+      - REDIS_PASSWORD
+      - APP_URL
   redis:
     image: redis

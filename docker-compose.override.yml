@@ -1,0 +1,13 @@
+version: '3.4'
+services:
+  api:
+    build: .
+    ports:
+     - 8000:80
+    env_file:
+     - .env
+    volumes:
+     - .:/code
+    command: python main.py
+  redis:
+    image: redis

@@ -8,3 +8,4 @@
 coverage
 .tox
 .env
+_docpress
