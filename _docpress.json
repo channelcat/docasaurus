@@ -4,9 +4,66 @@
       {
         "title": "Docasaurus",
         "source": "README.md",
-        "expand": true,
         "url": "index.html",
         "slug": "index"
+      },
+      {
+        "title": "How-To",
+        "sections": [
+          {
+            "title": "Setup Repo",
+            "source": "docs/how_to/setup_repo.md",
+            "url": "how_to/setup_repo.html",
+            "slug": "how_tosetup_repo"
+          },
+          {
+            "title": "Status",
+            "source": "docs/how_to/status.md",
+            "url": "how_to/status.html",
+            "slug": "how_tostatus"
+          },
+          {
+            "title": "Badges",
+            "source": "docs/how_to/badges.md",
+            "url": "how_to/badges.html",
+            "slug": "how_tobadges"
+          },
+          {
+            "title": "Testing",
+            "source": "docs/how_to/testing.md",
+            "url": "how_to/testing.html",
+            "slug": "how_totesting"
+          },
+          {
+            "title": "Make Docs Great",
+            "source": "docs/how_to/document.md",
+            "url": "how_to/document.html",
+            "slug": "how_todocument"
+          }
+        ]
+      },
+      {
+        "title": "Developer Guides",
+        "sections": [
+          {
+            "title": "Getting Started",
+            "source": "docs/developer/getting_started.md",
+            "url": "developer/getting_started.html",
+            "slug": "developergetting_started"
+          },
+          {
+            "title": "Contributing",
+            "source": "docs/developer/contributing.md",
+            "url": "developer/contributing.html",
+            "slug": "developercontributing"
+          },
+          {
+            "title": "Deploying",
+            "source": "docs/developer/deploying.md",
+            "url": "developer/deploying.html",
+            "slug": "developerdeploying"
+          }
+        ]
       }
     ]
   },
@@ -16,9 +73,66 @@
       "title": "Docasaurus",
       "pageTitle": "Docasaurus",
       "slug": "index"
+    },
+    "how_to/setup_repo.html": {
+      "source": "docs/how_to/setup_repo.md",
+      "title": "Setup Repo - Docasaurus",
+      "pageTitle": "Setup Repo",
+      "slug": "how_tosetup_repo"
+    },
+    "how_to/status.html": {
+      "source": "docs/how_to/status.md",
+      "title": "Status - Docasaurus",
+      "pageTitle": "Status",
+      "slug": "how_tostatus"
+    },
+    "how_to/badges.html": {
+      "source": "docs/how_to/badges.md",
+      "title": "Badges - Docasaurus",
+      "pageTitle": "Badges",
+      "slug": "how_tobadges"
+    },
+    "how_to/testing.html": {
+      "source": "docs/how_to/testing.md",
+      "title": "Testing - Docasaurus",
+      "pageTitle": "Testing",
+      "slug": "how_totesting"
+    },
+    "how_to/document.html": {
+      "source": "docs/how_to/document.md",
+      "title": "Make Docs Great - Docasaurus",
+      "pageTitle": "Make Docs Great",
+      "slug": "how_todocument"
+    },
+    "developer/getting_started.html": {
+      "source": "docs/developer/getting_started.md",
+      "title": "Getting Started - Docasaurus",
+      "pageTitle": "Getting Started",
+      "slug": "developergetting_started"
+    },
+    "developer/contributing.html": {
+      "source": "docs/developer/contributing.md",
+      "title": "Contributing - Docasaurus",
+      "pageTitle": "Contributing",
+      "slug": "developercontributing"
+    },
+    "developer/deploying.html": {
+      "source": "docs/developer/deploying.md",
+      "title": "Deploying - Docasaurus",
+      "pageTitle": "Deploying",
+      "slug": "developerdeploying"
     }
   },
   "sources": {
-    "README.md": "index.html"
+    "README.md": "index.html",
+    "docs/how_to/setup_repo.md": "how_to/setup_repo.html",
+    "docs/how_to/status.md": "how_to/status.html",
+    "docs/how_to/badges.md": "how_to/badges.html",
+    "docs/how_to/testing.md": "how_to/testing.html",
+    "docs/how_to/document.md": "how_to/document.html",
+    "docs/developer/getting_started.md": "developer/getting_started.html",
+    "docs/developer/contributing.md": "developer/contributing.html",
+    "docs/developer/deploying.md": "developer/deploying.html",
+    "docs/docpress.json": "docpress.json"
   }
 }
