@@ -77,18 +77,7 @@ def setup(owner, repo):
     request_create_docs = request.args.get('createDocs') == 'true'
     request_add_badge = request.args.get('addBadge') == 'true'
 
-    repo_name = repo
     repo_dir = TemporaryDirectory()
-    repo_url = f'https://{GIT_HOST}/{owner}/{repo}.git'
-    repo_uri = f'{owner}/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/{owner}/{repo}'
-    pages_url = f'https://{owner}.github.io/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/pages/{owner}/{repo}'
-    badge_image_url = f'{APP_URL}/badge/{owner}/{repo_name}'
-    button_image_url = f'{APP_URL}/button'
-    status_url = f'{APP_URL}/status/{owner}/{repo_name}'
-    readme_path = f'{repo_dir.name}/README.md'
-    docs_path = f'{repo_dir.name}/docs'
-    badge = f'\n[![Documentation]({badge_image_url})]({status_url})\n'
-    button = f'\n[![Documentation]({button_image_url})]({pages_url})\n'
     try:
         # Check if hook is needed
         repo = github.get_repo(f'{owner}/{repo}')
@@ -97,7 +86,18 @@ def setup(owner, repo):
             if APP_URL in hook_url:
                 needs_create_hook = False
                 break
-        
+
+        repo_url = f'https://{GIT_HOST}/{owner}/{repo}.git'
+        repo_uri = f'{owner}/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/{owner}/{repo}'
+        pages_url = f'https://{owner}.github.io/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/pages/{owner}/{repo}'
+        badge_image_url = f'{APP_URL}/badge/{owner}/{repo.name}'
+        button_image_url = f'{APP_URL}/button'
+        status_url = f'{APP_URL}/status/{owner}/{repo.name}'
+        readme_path = f'{repo_dir.name}/README.md'
+        docs_path = f'{repo_dir.name}/docs'
+        badge = f'\n[![Documentation]({badge_image_url})]({status_url})\n'
+        button = f'\n[![Documentation]({button_image_url})]({pages_url})\n'
+
         # Check if README.md and docs are needed
         run(['git', 'clone', repo_url, repo_dir.name])
         needs_create_readme = not path.exists(readme_path)
