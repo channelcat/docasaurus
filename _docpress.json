@@ -46,6 +46,80 @@
         "title": "Writing Great Docs",
         "sections": [
           {
+            "title": "Overview",
+            "source": "docs/style_guide/overview.md",
+            "url": "style_guide/overview.html",
+            "slug": "style_guideoverview"
+          },
+          {
+            "title": "Contact Info",
+            "source": "docs/style_guide/contact_information.md",
+            "url": "style_guide/contact_information.html",
+            "slug": "style_guidecontact_information"
+          },
+          {
+            "title": "End-User Docs",
+            "source": "docs/style_guide/end_user.md",
+            "url": "style_guide/end_user.html",
+            "slug": "style_guideend_user",
+            "headings": [
+              {
+                "title": "Tutorials",
+                "depth": 2,
+                "id": "tutorials"
+              },
+              {
+                "title": "How-To guides",
+                "depth": 2,
+                "id": "how-to-guides"
+              },
+              {
+                "title": "Reference",
+                "depth": 2,
+                "id": "reference"
+              }
+            ]
+          },
+          {
+            "title": "System Docs",
+            "source": "docs/style_guide/system.md",
+            "url": "style_guide/system.html",
+            "slug": "style_guidesystem",
+            "headings": [
+              {
+                "title": "Reference",
+                "depth": 2,
+                "id": "reference"
+              },
+              {
+                "title": "How-To Guides",
+                "depth": 2,
+                "id": "how-to-guides"
+              },
+              {
+                "title": "Architecture",
+                "depth": 2,
+                "id": "architecture"
+              },
+              {
+                "title": "Operations",
+                "depth": 2,
+                "id": "operations"
+              }
+            ]
+          },
+          {
+            "title": "Bad Examples",
+            "source": "docs/style_guide/bad_examples.md",
+            "url": "style_guide/bad_examples.html",
+            "slug": "style_guidebad_examples"
+          }
+        ]
+      },
+      {
+        "title": "Developer Guides",
+        "sections": [
+          {
             "title": "Getting Started",
             "source": "docs/developer/getting_started.md",
             "url": "developer/getting_started.html",
@@ -62,29 +136,6 @@
             "source": "docs/developer/deploying.md",
             "url": "developer/deploying.html",
             "slug": "developerdeploying"
-          }
-        ]
-      },
-      {
-        "title": "Developer Guides",
-        "sections": [
-          {
-            "title": "Getting Started",
-            "source": "docs/developer/getting_started.md",
-            "url": "developer/getting_started.html",
-            "slug": "developergetting_started-2"
-          },
-          {
-            "title": "Contributing",
-            "source": "docs/developer/contributing.md",
-            "url": "developer/contributing.html",
-            "slug": "developercontributing-2"
-          },
-          {
-            "title": "Deploying",
-            "source": "docs/developer/deploying.md",
-            "url": "developer/deploying.html",
-            "slug": "developerdeploying-2"
           }
         ]
       }
@@ -127,23 +178,92 @@
       "pageTitle": "Customize",
       "slug": "how_tocustomize"
     },
+    "style_guide/overview.html": {
+      "source": "docs/style_guide/overview.md",
+      "title": "Overview - Docasaurus",
+      "pageTitle": "Overview",
+      "slug": "style_guideoverview"
+    },
+    "style_guide/contact_information.html": {
+      "source": "docs/style_guide/contact_information.md",
+      "title": "Contact Info - Docasaurus",
+      "pageTitle": "Contact Info",
+      "slug": "style_guidecontact_information"
+    },
+    "style_guide/end_user.html": {
+      "source": "docs/style_guide/end_user.md",
+      "title": "End-User Docs - Docasaurus",
+      "pageTitle": "End-User Docs",
+      "slug": "style_guideend_user",
+      "headings": [
+        {
+          "title": "Tutorials",
+          "depth": 2,
+          "id": "tutorials"
+        },
+        {
+          "title": "How-To guides",
+          "depth": 2,
+          "id": "how-to-guides"
+        },
+        {
+          "title": "Reference",
+          "depth": 2,
+          "id": "reference"
+        }
+      ]
+    },
+    "style_guide/system.html": {
+      "source": "docs/style_guide/system.md",
+      "title": "System Docs - Docasaurus",
+      "pageTitle": "System Docs",
+      "slug": "style_guidesystem",
+      "headings": [
+        {
+          "title": "Reference",
+          "depth": 2,
+          "id": "reference"
+        },
+        {
+          "title": "How-To Guides",
+          "depth": 2,
+          "id": "how-to-guides"
+        },
+        {
+          "title": "Architecture",
+          "depth": 2,
+          "id": "architecture"
+        },
+        {
+          "title": "Operations",
+          "depth": 2,
+          "id": "operations"
+        }
+      ]
+    },
+    "style_guide/bad_examples.html": {
+      "source": "docs/style_guide/bad_examples.md",
+      "title": "Bad Examples - Docasaurus",
+      "pageTitle": "Bad Examples",
+      "slug": "style_guidebad_examples"
+    },
     "developer/getting_started.html": {
       "source": "docs/developer/getting_started.md",
       "title": "Getting Started - Docasaurus",
       "pageTitle": "Getting Started",
-      "slug": "developergetting_started-2"
+      "slug": "developergetting_started"
     },
     "developer/contributing.html": {
       "source": "docs/developer/contributing.md",
       "title": "Contributing - Docasaurus",
       "pageTitle": "Contributing",
-      "slug": "developercontributing-2"
+      "slug": "developercontributing"
     },
     "developer/deploying.html": {
       "source": "docs/developer/deploying.md",
       "title": "Deploying - Docasaurus",
       "pageTitle": "Deploying",
-      "slug": "developerdeploying-2"
+      "slug": "developerdeploying"
     }
   },
   "sources": {
@@ -153,6 +273,11 @@
     "docs/how_to/badges.md": "how_to/badges.html",
     "docs/how_to/testing.md": "how_to/testing.html",
     "docs/how_to/customize.md": "how_to/customize.html",
+    "docs/style_guide/overview.md": "style_guide/overview.html",
+    "docs/style_guide/contact_information.md": "style_guide/contact_information.html",
+    "docs/style_guide/end_user.md": "style_guide/end_user.html",
+    "docs/style_guide/system.md": "style_guide/system.html",
+    "docs/style_guide/bad_examples.md": "style_guide/bad_examples.html",
     "docs/developer/getting_started.md": "developer/getting_started.html",
     "docs/developer/contributing.md": "developer/contributing.html",
     "docs/developer/deploying.md": "developer/deploying.html",
