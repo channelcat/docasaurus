@@ -5,7 +5,7 @@ from os import environ, path, rename, listdir
 import re
 import requests
 from shutil import copytree, rmtree
-from storage import set_status, get_status
+from storage import set_status, get_status, set_badge, get_badge
 from subprocess import check_output, STDOUT, CalledProcessError
 from tempfile import TemporaryDirectory
 from util import run, move_files, remove_files, replace_in_files, replace_in_str
@@ -35,29 +35,34 @@ def button():
 
 @app.route('/badge/<owner>/<repo>')
 def badge(owner, repo):
-    status = get_status(owner, repo)
-    coverage = status.get('coverage', {}).get('percent', 0)
-    if coverage >= 99:
-        coverage_color = 'brightgreen'
-    elif coverage >= 80:
-        coverage_color = 'green'
-    elif coverage >= 60:
-        coverage_color = 'yellowgreen'
-    elif coverage >= 30:
-        coverage_color = 'yellow'
-    else:
-        coverage_color = 'orange'
+    badge = get_badge(owner, repo)
+    if not badge:
+        status = get_status(owner, repo)
+        coverage = status.get('coverage', {}).get('percent', 0)
+        if coverage >= 99:
+            coverage_color = 'brightgreen'
+        elif coverage >= 80:
+            coverage_color = 'green'
+        elif coverage >= 60:
+            coverage_color = 'yellowgreen'
+        elif coverage >= 30:
+            coverage_color = 'yellow'
+        else:
+            coverage_color = 'orange'
 
-    url = "https://img.shields.io/badge/docs-unknown-lightgrey.svg"
-    if status.get('status') == 'success':
-        url = f"https://img.shields.io/badge/docs-{coverage}%25-{coverage_color}.svg"
-    elif status.get('status') == 'building':
-        url = "https://img.shields.io/badge/docs-building-blue.svg"
-    elif status.get('status') == 'error':
-        url = "https://img.shields.io/badge/docs-error-red.svg"
-    
-    response = requests.get(url)
-    return Response(response.text, mimetype=response.headers.get('Content-Type'))
+        url = "https://img.shields.io/badge/docs-unknown-lightgrey.svg"
+        if status.get('status') == 'success':
+            url = f"https://img.shields.io/badge/docs-{coverage}%25-{coverage_color}.svg"
+        elif status.get('status') == 'building':
+            url = "https://img.shields.io/badge/docs-building-blue.svg"
+        elif status.get('status') == 'error':
+            url = "https://img.shields.io/badge/docs-error-red.svg"
+        
+        response = requests.get(url)
+        badge = response.text
+        set_badge(owner, repo, badge)
+
+    return Response(badge, mimetype='image/svg+xml;charset=utf-8')
 
 @app.route('/api/v1/githook', methods=['POST'])
 def githook():
