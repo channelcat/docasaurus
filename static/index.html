@@ -47,6 +47,12 @@
                                             <img v-if="success && results.badge=='ready'" src="https://img.shields.io/badge/Badge-ready-green.svg" />
                                             <img v-if="success && results.badge=='skip'" src="https://img.shields.io/badge/Badge-skip-orange.svg" />
                                             <br />
+                                            <img v-if="!success && addBadge" src="https://img.shields.io/badge/Button-generating-lightgrey.svg" />
+                                            <img v-if="!success && !addBadge" src="https://img.shields.io/badge/Button-skip-orange.svg" />
+                                            <img v-if="success && results.button=='created'" src="https://img.shields.io/badge/Button-created-brightgreen.svg" />
+                                            <img v-if="success && results.button=='ready'" src="https://img.shields.io/badge/Button-ready-green.svg" />
+                                            <img v-if="success && results.button=='skip'" src="https://img.shields.io/badge/Button-skip-orange.svg" />
+                                            <br />
                                             <br />
                                         </div>
                                     </div>
@@ -123,6 +129,7 @@ new Vue({
                         readme: response.readme,
                         docs: response.docs,
                         badge: response.badge,
+                        button: response.button,
                     };
                 })
                 .catch((e) => {

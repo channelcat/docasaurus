@@ -1,5 +1,5 @@
-Making Docs Great
-=================
+Customize
+=========
 
 Because Docasaurus uses docpress, you can follow their documentation for making beautiful docs:
 

@@ -35,7 +35,7 @@
                                         Building...
                                     </div>
                                     <div v-if="status=='success'" class="notification is-success">
-                                        Build Passing - {{coverage}}% Coverage
+                                        Build Passing
                                     </div>
                                 </div>
                                 <div v-if="!loading && status!='building'" class="column has-text-right">
@@ -43,6 +43,30 @@
                                         <i class="fas fa-sync-alt"></i>
                                     </a>
                                 </div>
+                            </div>
+                            <div class="columns is-gapless" v-if="status=='success'" style="margin-top:-5px;">
+                                <div v-bind:class="[{'is-four-fifths': !loading && status!='building'}, 'column']">
+                                    <div class="content" v-bind:class="[{
+                                            'is-success': coverage.percent>=100,
+                                            'is-warning': coverage.percent>30 && coverage.percentage<100,
+                                            'is-danger': coverage.percent<30
+                                        }, 'notification']">
+                                        {{coverage.percent}}% Coverage
+                                    </div>
+                                </div>
+                                <div v-if="!loading && status!='building'" class="column has-text-right">
+                                    <a class="button" v-on:click="toggleCoverage" style="height:64px; width: 64px;">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div v-if="showCoverage" class="notification content has-text-left is-warning">
+                                <ul>
+                                    <h3>Consider Adding</h3>
+                                    <li v-for="suggestion in coverage.suggestions">
+                                        {{suggestion}}
+                                    </li>
+                                </ul>
                             </div>
                             <a v-bind:href="repoUrl">
                                 <h5><i class="fab fa-github"></i> Github</h5>
@@ -71,6 +95,7 @@ new Vue({
         message: '',
         coverage: 0,
         loading: true,
+        showCoverage: false,
     },
     created: function () {
         var urlParts = window.location.href.split('/');
@@ -114,6 +139,9 @@ new Vue({
                 this.status = 'error';
                 this.message = str(e);
             });
+        },
+        toggleCoverage: function() {
+            this.showCoverage = !this.showCoverage;
         }
     }
 });

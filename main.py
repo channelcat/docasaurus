@@ -1,14 +1,14 @@
 from flask import Flask, jsonify, redirect, request, send_from_directory, Response
-from glob import glob
-from tempfile import TemporaryDirectory
-from subprocess import check_output, STDOUT, CalledProcessError
-from os import environ, listdir, path, unlink, rename, walk
 from io import StringIO
-from shutil import move, rmtree, copytree, copy
 from github import Github, UnknownObjectException
-from storage import set_status, get_status
+from os import environ, path, rename, listdir
 import re
 import requests
+from shutil import copytree, rmtree
+from storage import set_status, get_status
+from subprocess import check_output, STDOUT, CalledProcessError
+from tempfile import TemporaryDirectory
+from util import run, move_files, remove_files, replace_in_files, replace_in_str
 
 APP_URL = environ.get('APP_URL')
 GIT_HOST = environ.get('GIT_HOST', 'github.com')
@@ -21,58 +21,36 @@ github = Github(GIT_USERNAME, GIT_PASSWORD, base_url=GIT_API_URL)
 
 app = Flask('docasaurus')
 
-def run(*args, **kwargs):
-    try:
-        return check_output(*args, **kwargs, stderr=STDOUT)
-    except CalledProcessError as e:
-        raise Exception(e.output.decode())
-
-def move_files(source, destination):
-    for _file in glob(f'{source}/*'):
-        move(_file, destination)
-    return True
-
-def remove_files(source, ignore=()):
-    for _file in listdir(source):
-        if _file in ignore:
-            continue
-        
-        file_path = f'{source}/{_file}'
-        if path.isdir(file_path):
-            rmtree(file_path)
-        else:
-            unlink(file_path)
-    return True
-
-def replace_in_files(directory, replacements):
-    for root, dirs, files in walk(directory):
-        for name in files:
-            file_path = path.join(root, name)
-            with open(file_path) as file:
-                contents = file.read()
-            with open(file_path, 'w') as file:
-                contents = replace_in_str(contents, replacements)
-                file.write(contents)
-
-def replace_in_str(string, replacements):
-    for k, v in replacements.items():
-        string = string.replace('{' + k + '}', v)
-    return string
-
 @app.route('/')
 def index():
-    return send_from_directory('/code', 'index.html')
+    return send_from_directory('/code/static', 'index.html')
 
 @app.route('/status/<owner>/<repo>')
 def status(owner, repo):
-    return send_from_directory('/code', 'status.html')
+    return send_from_directory('/code/static', 'status.html')
+
+@app.route('/button')
+def button():
+    return send_from_directory('/code/static', 'button-small.png')
 
 @app.route('/badge/<owner>/<repo>')
 def badge(owner, repo):
     status = get_status(owner, repo)
+    coverage = status.get('coverage', {}).get('percent', 0)
+    if coverage >= 99:
+        coverage_color = 'brightgreen'
+    elif coverage >= 80:
+        coverage_color = 'green'
+    elif coverage >= 60:
+        coverage_color = 'yellowgreen'
+    elif coverage >= 30:
+        coverage_color = 'yellow'
+    else:
+        coverage_color = 'orange'
+
     url = "https://img.shields.io/badge/docs-unknown-lightgrey.svg"
     if status.get('status') == 'success':
-        url = f"https://img.shields.io/badge/docs-{status.get('coverage', 100)}%25-brightgreen.svg"
+        url = f"https://img.shields.io/badge/docs-{coverage}%25-{coverage_color}.svg"
     elif status.get('status') == 'building':
         url = "https://img.shields.io/badge/docs-building-blue.svg"
     elif status.get('status') == 'error':
@@ -105,9 +83,12 @@ def setup(owner, repo):
     repo_uri = f'{owner}/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/{owner}/{repo}'
     pages_url = f'https://{owner}.github.io/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/pages/{owner}/{repo}'
     badge_image_url = f'{APP_URL}/badge/{owner}/{repo_name}'
+    button_image_url = f'{APP_URL}/button'
     status_url = f'{APP_URL}/status/{owner}/{repo_name}'
     readme_path = f'{repo_dir.name}/README.md'
     docs_path = f'{repo_dir.name}/docs'
+    badge = f'\n[![Documentation]({badge_image_url})]({status_url})\n'
+    button = f'\n[![Documentation]({button_image_url})]({pages_url})\n'
     try:
         # Check if hook is needed
         repo = github.get_repo(f'{owner}/{repo}')
@@ -123,10 +104,8 @@ def setup(owner, repo):
         needs_create_docs = not path.exists(docs_path) and request_create_docs
 
         # Check if badge is needed
-        if not needs_create_readme:
-            needs_add_badge = badge_image_url not in open(readme_path).read()
-        if not request_add_badge:
-            needs_add_badge = False
+        needs_add_badge = request_add_badge and (needs_create_readme or badge_image_url not in open(readme_path).read())
+        needs_add_button = request_add_badge and (needs_create_readme or button_image_url not in open(readme_path).read())
     
         replacements = {
             'github_uri': repo_uri,
@@ -148,16 +127,34 @@ def setup(owner, repo):
             copytree('/code/template/docs', docs_path)
             run(['git', 'add', 'docs'], cwd=repo_dir.name)
             replace_in_files(docs_path, replacements)
-        if needs_add_badge:
+        
+        if needs_add_badge or needs_add_button:
             readme = open(readme_path).read()
-            badge = f'\n[![Documentation]({badge_image_url})]({status_url})\n'
-            badge_position = readme.find('[')
-            if badge_position == -1:
-                badge_position = readme.find('\n') + 1
-            if badge_position > 0:
-                readme = readme[:badge_position] + badge + readme[badge_position:]
+
+            add_badge_index = add_button_index = 0
+            readme_newlines = [
+                (readme.find('\n'), '\n'),
+                (readme.find('\r\n'), '\r\n'),
+            ]
+            readme_newlines = filter(lambda n: n[0] != -1, readme_newlines)
+            if readme_newlines:
+                readme_newline = min(readme_newlines, key=lambda n: n[0])[1]
             else:
-                readme = badge + readme
+                readme_newline = '\n'
+
+            first_badge_index = readme.find('[![')
+            if first_badge_index != -1:
+                _add_badge_index = readme.find(readme_newline*2, first_badge_index)
+                if _add_badge_index != -1:
+                    add_badge_index = _add_badge_index + len(readme_newline)
+                    add_button_index = add_badge_index
+
+        if needs_add_badge:
+            readme = readme[:add_badge_index] + badge + readme_newline + readme[add_badge_index:]
+        if needs_add_button:
+            readme = readme[:add_button_index] + button + readme_newline + readme[add_button_index:]
+
+        if needs_add_badge or needs_add_button:
             open(readme_path, 'w').write(readme)
 
         # Push changes to Git
@@ -169,8 +166,8 @@ def setup(owner, repo):
 
     except UnknownObjectException:
         return jsonify({ "success": False, "error": f"Unable to access repo.  Be sure `{GIT_USERNAME}` has admin access to the repo.  You can limit access to 'write' after setup." })
-    # except Exception as e:
-    #     return jsonify({ 'success': False, 'error': str(e) })
+    except Exception as e:
+        return jsonify({ 'success': False, 'error': str(e) })
     finally:
         repo_dir.cleanup()
 
@@ -180,6 +177,7 @@ def setup(owner, repo):
         "readme": "created" if needs_create_readme else "ready",
         "docs": "created" if needs_create_docs else ("ready" if request_create_docs else "skip"),
         "badge": "created" if needs_add_badge else ("ready" if request_add_badge else "skip"),
+        "button": "created" if needs_add_button else ("ready" if request_add_badge else "skip"),
     })
 
 @app.route('/api/v1/process/<owner>/<repo>')
@@ -189,6 +187,8 @@ def process(owner, repo):
     docs_dir = TemporaryDirectory()
     try:
         repo_url = f'https://{GIT_HOST}/{owner}/{repo}.git'
+        readme_path = f'{repo_dir.name}/README.md'
+        toc_path = f'{repo_dir.name}/docs/README.md'
 
         # Pull Git Repo
         try:
@@ -205,6 +205,41 @@ def process(owner, repo):
             errors = re.findall(r'Error: (.+)', str(e))
             error = errors[0] if errors else 'Unknown'
             raise Exception(f'Unable to build docs.  Error: {error}')
+        
+        # Check Coverage
+        suggestions = []
+        coverage_points = 1
+        coverage_points_max = 10
+
+        toc_exists = path.exists(toc_path) # We really want this to be case insensitive but meh
+        readme_and_toc = open(readme_path).read() if path.exists(readme_path) else ''
+        readme_and_toc += open(toc_path).read() if path.exists(toc_path) else ''
+        docs_links = re.findall(r'\[(.+?)\]', readme_and_toc)
+        docs_titles = " ".join(docs_links).lower()
+
+        if toc_exists:
+            coverage_points += 1
+        else:
+            suggestions.append('table of contents')
+        
+        items = [
+            ('getting started guide', ('getting started', 'installation', 'first time', 'setting up', 'setup')),
+            ('how-to\'s / tutorials', ('how-to', 'howto', 'tutorial')),
+            ('reference docs', ('reference',)),
+            ('developer guide', ('developer',)),
+            ('runbooks', ('runbook',)),
+            ('architecture', ('architecture',)),
+            ('access requirements', ('access',)),
+            ('contributing guide', ('contribut',)),
+        ]
+
+        for name, matches in items:
+            for match in matches:
+                if match in docs_titles:
+                    coverage_points += 1
+                    break
+            else:
+                suggestions.append(f'{name}')
 
         # Setup docs branch
         try:
@@ -238,7 +273,10 @@ def process(owner, repo):
                 raise Exception(f'Unable to update gh-pages branch.  Be sure `{GIT_USERNAME}` has write access to the repo.  Error: {e}')
         
         ls = run(['ls', '-a', repo_dir.name]).decode().split('\n')
-        set_status(owner, repo, status='success', coverage=100)
+        set_status(owner, repo, status='success', coverage=dict(
+            percent=int(coverage_points/coverage_points_max*100),
+            suggestions=suggestions,
+        ))
         return jsonify({ 'success': True, 'ls': ls, 'branch_created': is_new_branch, 'updated': updated })
     except Exception as e:
         set_status(owner, repo, status='error', message=str(e))
