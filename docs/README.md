@@ -9,9 +9,11 @@ Documentation
   * [Testing](./how_to/testing.md)
   * [Customize](./how_to/customize.md)
 * Writing Great Docs
-  * [Getting Started](./developer/getting_started.md)
-  * [Contributing](./developer/contributing.md)
-  * [Deploying](./developer/deploying.md)
+  * [Overview](./style_guid/overview.md)
+  * [Contact Info](./style_guid/contact_information.md)
+  * [End-User Docs](./style_guid/end_user.md)
+  * [System Docs](./style_guid/system.md)
+  * [Bad Examples](./style_guid/bad_examples.md)
 * Developer Guides
   * [Getting Started](./developer/getting_started.md)
   * [Contributing](./developer/contributing.md)

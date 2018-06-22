@@ -1,5 +1,5 @@
-End-user
-========
+End-user Documentation
+======================
 
 End-user documentation may not always be applicable. But if you have a user interface, here are the things that end-user documentation needs:
 

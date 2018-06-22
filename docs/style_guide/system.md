@@ -1,5 +1,5 @@
-System/Internal
-===============
+System/Internal Documentation
+=============================
 
 System docs are meant for people on our team or who would be using the product/service as a developer. this seems to be the most important part  as it allows everyone on the team to work in systems they may be unfamiliar with.
 Here are the pieces of an internal documentation:
