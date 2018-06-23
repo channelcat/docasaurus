@@ -92,9 +92,9 @@ def setup(owner, repo):
                 needs_create_hook = False
                 break
 
-        repo_url = f'https://{GIT_HOST}/{owner}/{repo}.git'
-        repo_uri = f'{owner}/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/{owner}/{repo}'
-        pages_url = f'https://{owner}.github.io/{repo}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/pages/{owner}/{repo}'
+        repo_url = f'https://{GIT_HOST}/{owner}/{repo.name}.git'
+        repo_uri = f'{owner}/{repo.name}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/{owner}/{repo.name}'
+        pages_url = f'https://{owner}.github.io/{repo.name}' if GIT_HOST == 'github.com' else f'https://{GIT_HOST}/pages/{owner}/{repo.name}'
         badge_image_url = f'{APP_URL}/badge/{owner}/{repo.name}'
         button_image_url = f'{APP_URL}/button'
         status_url = f'{APP_URL}/status/{owner}/{repo.name}'
@@ -174,7 +174,10 @@ def setup(owner, repo):
     except Exception as e:
         return jsonify({ 'success': False, 'error': str(e) })
     finally:
-        repo_dir.cleanup()
+        try:
+            repo_dir.cleanup()
+        except:
+            pass
 
     return jsonify({ 
         "success": True, 
